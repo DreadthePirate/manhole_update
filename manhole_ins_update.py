@@ -6,7 +6,7 @@ Created by Heath Johnson on March 2023
 """
 
 
-import _chandlergis as coc
+
 import os
 import arcpy
 from arcgis.gis import GIS
@@ -22,7 +22,7 @@ def main():
         manholes = r""
         
         # connect to EnterpriseGIS database
-        logging.coc_info("Connecting to EnterpriseGIS database")
+        logging("Connecting to EnterpriseGIS database")
         gis = GIS("")
         
 
@@ -39,11 +39,11 @@ def main():
             eid = attributes.pop('eid')
             mi_dict[eid] = attributes
         for k,v in mi_dict.items():
-            logging.coc_info(k, v)
+            logging(k, v)
 
         # Update attributes based on date and condition.
         # CRUD -> Target Dataset
-        logging.coc_info(("Searching Database for updates"))
+        logging(("Searching Database for updates"))
         with arcpy.da.UpdateCursor(manholes, mh_fields) as mh_cursor:
             for mh in mh_cursor:
                 if mh[0] in mi_dict.keys():
@@ -54,7 +54,7 @@ def main():
                         mh[1] = mi_dict[mh_key]['condition']
                         # ARCGIS datetime needs to be a specific format. Dividing time by 1000 to remove the milliseconds.
                         mh[2] = datetime.datetime.fromtimestamp(mi_dict[mh_key]['inspection_date']/1000)
-        logging.coc_info("Success")
+        logging("Success")
 
     except Exception as err:
         print(err)
@@ -77,10 +77,10 @@ if __name__ == '__main__':
 
     # Set environments and update email subject line.
     gis_env = coc.Env("")
-    logging.coc_debug(f"{gis_env.instance} instance set.")
+    logging(f"{gis_env.instance} instance set.")
     email_subject = f"{email_subject} [{gis_env.instance.upper()}]"
     accela_env = coc.Env("")
-    logging.coc_debug(f"{accela_env.instance} instance set.")
+    logging(f"{accela_env.instance} instance set.")
     email_subject = f"{email_subject} [{accela_env.instance.upper()}]"
 
     try:
@@ -95,24 +95,24 @@ if __name__ == '__main__':
 
     except Exception as e:
         print(e)
-        logging.exception("An Exception Occurred.")
+        logging("An Exception Occurred.")
         task_status = "FAIL"
         task_msg = e
     finally:
         # Log script result in database
         try:
-            logging.coc_info(f"Log {task_status} result in database.")
+            logging(f"Log {task_status} result in database.")
             gis_env.updateScheduledTaskLog(taskID, task_status, task_msg)
         except Exception as e:
             print(e)
-            logging.exception("Error logging to database.")
+            logging("Error logging to database.")
             pass
         # Cleanup
         try:
             arcpy.management.ClearWorkspaceCache()
         except Exception as e:
             print(e)
-            logging.exception("Error trying gis_env.updateScheduledTaskLog()")
+            logging("Error trying gis_env.updateScheduledTaskLog()")
             pass
         # Send log file as email
         try:
@@ -131,8 +131,8 @@ if __name__ == '__main__':
                     body_content=log_file_content,
                     to=[""]
                 )
-                logging.coc_info(f"Email sent to {recipients}")
+                logging(f"Email sent to {recipients}")
         except Exception as e:
             print(e)
-            logging.exception("Error trying coc.sendEmail()")
+            logging("Error trying coc.sendEmail()")
             pass
